@@ -629,5 +629,12 @@ frame as 8-bit NV12. Franky now admits that 4K NV12 transport through the same
 chroma hook, preserves source metadata, and falls back visibly rather than
 blacking out when NGU preparation fails. See `NGU_V1.6.1_RELEASE.md`.
 
+1.6.2 addresses nonstandard valid geometries such as 1920x800. Native NGU
+remains limited to its evidence-backed dimensions; unsupported native geometry
+now uses `ewa_lanczossharp` as the common-renderer fallback instead of
+bilinear. This keeps playback compatible, but is explicitly not a claim that
+the native NGU graph supports arbitrary dimensions. A general NGU graph still
+requires dimension-independent pass scheduling and its own Evidence gates.
+
 MadVR HDR presentation and final-frame equality are not gates for this
 integration. Existing exact NGU source-domain tests remain regressions.

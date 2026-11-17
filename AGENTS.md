@@ -80,7 +80,7 @@ verified 720p/1080p paths use the same hook/input/output contract. The observed
 reduction after the NGU intermediate is owned by Franky's configured
 downscaler.
 
-At v1.6.1, the admitted HDR source domains are the target-observed
+At v1.6.2, the admitted HDR source domains are the target-observed
 limited-range P010 BT.2020/PQ 720p/1080p, BT.2020/HLG 1080p and BT.709/PQ
 1080p inputs, plus native-size 4K 4:2:0 P010/P016 and the 8-bit NV12 transport
 delivered by PotPlayer through `PL_HOOK_CHROMA_INPUT`. The 720p/1080p paths use source-domain
@@ -92,6 +92,11 @@ does not own the madVR HDR presentation tail
 (`PS_340/1200/1208/1012/1368`). Unobserved source geometries, other HDR
 formats, transfer/primaries combinations, unadmitted Low/Medium/High rows,
 formats and activation/tail branches fail closed.
+
+Native NGU still admits only its evidence-backed source geometries. Other
+valid source geometries render through the common renderer with
+`ewa_lanczossharp`; this is a compatibility fallback, not native NGU support
+for arbitrary dimensions.
 
 NGU remains behind the shared libplacebo frame/hook interface. The NGU module
 must not implement madVR's NGU-specific post-downscaler algorithms. A future

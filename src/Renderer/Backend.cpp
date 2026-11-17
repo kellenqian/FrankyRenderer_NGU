@@ -2212,6 +2212,8 @@ struct PlaceboBackend::State
         {
             if (!f)
                 return wide(none);
+            if (f == CommonRendererFallbackFilter())
+                return L"ewa_lanczossharp";
             if (!f->name || strcmp(f->name, "custom"))
                 return wide(f->name ? f->name : none);
             std::wstring detail;
@@ -2226,7 +2228,7 @@ struct PlaceboBackend::State
         };
         const bool chromaPlane = options->params.plane_upscaler != nullptr;
         const auto* chromaFilter =
-            nguCommonFallback ? pl_render_default_params.plane_upscaler
+            nguCommonFallback ? CommonRendererFallbackFilter()
                               : chromaPlane ? options->params.plane_upscaler : options->params.upscaler;
         if (rtxDirect)
             row(L"Chroma") << L"upscale" << dot << L"NVIDIA driver (RTX)";
@@ -2266,7 +2268,7 @@ struct PlaceboBackend::State
                 value << dot
                       << filterName(
                              nguCommonFallback
-                                 ? (down ? pl_render_default_params.downscaler : pl_render_default_params.upscaler)
+                                 ? (down ? options->params.downscaler : CommonRendererFallbackFilter())
                                  : (down ? options->params.downscaler : options->params.upscaler),
                              "bilinear",
                              down ? 1 : 0);

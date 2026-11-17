@@ -289,8 +289,9 @@ int main(int argc, char** argv)
         Require(SUCCEEDED(BuildRenderOptions(options, settings)), "NGU render options");
         auto fallbackParams = options->params;
         ApplyCommonRendererFallback(fallbackParams, settings, &options->dither_params);
-        Require(fallbackParams.plane_upscaler == pl_render_default_params.plane_upscaler,
-                "NGU fallback restores the actual plane scaler");
+        Require(fallbackParams.upscaler == CommonRendererFallbackFilter() &&
+                    fallbackParams.plane_upscaler == CommonRendererFallbackFilter(),
+                "NGU fallback uses the common EWA Lanczos Sharp scaler");
         pl_options_free(&options);
 
         RenderSettings ditherSettings;
@@ -380,6 +381,36 @@ int main(int argc, char** argv)
         Require(unknownRed > unknownBlue && unknownGreen > 0,
                 "NGU native 4K unknown matrix preserves the source color orientation");
         std::puts("NGU native 4K unknown matrix remains visible");
+
+        VideoFrame cropped800 = native4k;
+        cropped800.width = 1920;
+        cropped800.height = 800;
+        cropped800.stride = 1920;
+        std::vector<uint8_t> cropped800Bytes(size_t(1920) * 800 + size_t(960) * 400 * 2);
+        for (int y = 0; y < 800; ++y)
+            for (int x = 0; x < 1920; ++x)
+                cropped800Bytes[size_t(y) * 1920 + x] = uint8_t(16 + (x * 219) / 1919);
+        for (size_t i = size_t(1920) * 800; i + 1 < cropped800Bytes.size(); i += 2)
+        {
+            cropped800Bytes[i] = 90;
+            cropped800Bytes[i + 1] = 128;
+        }
+        bool cropped800Hook = false;
+        backend.SetNguHookProbeForTest(
+            [&](const pl_hook_params&, const pl_hook_res&)
+            {
+                cropped800Hook = true;
+            });
+        Require(SUCCEEDED(backend.Upload(cropped800, cropped800Bytes.data(), cropped800Bytes.size())),
+                "NGU 1920x800 fallback upload");
+        std::vector<uint8_t> cropped800Pixels;
+        Require(SUCCEEDED(backend.RenderOffscreen(3840, 2160, cropped800Pixels)),
+                "NGU 1920x800 common-renderer fallback");
+        Require(!cropped800Hook, "1920x800 stays on the common-renderer fallback");
+        Require(std::any_of(cropped800Pixels.begin(), cropped800Pixels.end(), [](uint8_t value) { return value != 0; }),
+                "NGU 1920x800 fallback is not black");
+        backend.SetNguHookProbeForTest({});
+        std::puts("NGU 1920x800 uses a visible EWA Lanczos Sharp common fallback");
 
         D3D11_TEXTURE2D_DESC native4kDecoderDesc = {};
         native4kDecoderDesc.Width = 3840;
